@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Evidencija vozača</title>
+    <style>
+        body {
+            font-family: Arial;
+            padding: 20px;
+        }
+        select, input, button {
+            margin: 5px;
+            padding: 8px;
+        }
+        table {
+            border-collapse: collapse;
+            margin-top: 20px;
+            width: 100%;
+        }
+        th, td {
+            border: 1px solid black;
+            padding: 10px;
+            text-align: center;
+        }
+        th {
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+
+<h2>Evidencija boravka / vožnje</h2>
+
+<label>Vozač:</label>
+<select id="vozac">
+    <option>Nemanja</option>
+    <option>Dejan</option>
+</select>
+
+<br>
+
+<label>Ulazak u državu:</label>
+<input type="datetime-local" id="ulazak">
+
+<label>Izlazak iz države:</label>
+<input type="datetime-local" id="izlazak">
+
+<br>
+<button onclick="dodaj()">Dodaj zapis</button>
+
+<h3>Ukupno po vozaču:</h3>
+<p id="ukupno"></p>
+
+<table id="tabela">
+    <thead>
+        <tr>
+            <th onclick="sortiraj(0)">Vozač</th>
+            <th onclick="sortiraj(1)">Ulazak</th>
+            <th onclick="sortiraj(2)">Izlazak</th>
+            <th onclick="sortiraj(3)">Sati</th>
+            <th onclick="sortiraj(4)">Dani</th>
+        </tr>
+    </thead>
+    <tbody></tbody>
+</table>
+
+<script>
+let podaci = JSON.parse(localStorage.getItem("voznja")) || [];
+
+function sacuvaj() {
+    localStorage.setItem("voznja", JSON.stringify(podaci));
+}
+
+function dodaj() {
+    let vozac = document.getElementById("vozac").value;
+    let ulazak = new Date(document.getElementById("ulazak").value);
+    let izlazak = new Date(document.getElementById("izlazak").value);
+
+    if (!ulazak || !izlazak) {
+        alert("Unesi datume!");
+        return;
+    }
+
+    let sati = (izlazak - ulazak) / (1000 * 60 * 60);
+    let dani = sati / 24;
+
+    let zapis = {
+        vozac,
+        ulazak: ulazak.toLocaleString(),
+        izlazak: izlazak.toLocaleString(),
+        sati: sati.toFixed(2),
+        dani: dani.toFixed(2)
+    };
+
+    podaci.push(zapis);
+    sacuvaj();
+    prikazi();
+}
+
+function prikazi() {
+    let tbody = document.querySelector("#tabela tbody");
+    tbody.innerHTML = "";
+
+    let nemanja = 0;
+    let dejan = 0;
+
+    podaci.forEach(p => {
+        let red = `<tr>
+            <td>${p.vozac}</td>
+            <td>${p.ulazak}</td>
+            <td>${p.izlazak}</td>
+            <td>${p.sati}</td>
+            <td>${p.dani}</td>
+        </tr>`;
+        tbody.innerHTML += red;
+
+        if (p.vozac === "Nemanja") nemanja += parseFloat(p.sati);
+        if (p.vozac === "Dejan") dejan += parseFloat(p.sati);
+    });
+
+    document.getElementById("ukupno").innerHTML =
+        `Nemanja: ${nemanja.toFixed(2)} sati | Dejan: ${dejan.toFixed(2)} sati`;
+}
+
+function sortiraj(kolona) {
+    podaci.sort((a, b) => {
+        let vrednostiA = [a.vozac, a.ulazak, a.izlazak, a.sati, a.dani];
+        let vrednostiB = [b.vozac, b.ulazak, b.izlazak, b.sati, b.dani];
+        return vrednostiA[kolona] > vrednostiB[kolona] ? 1 : -1;
+    });
+    prikazi();
+}
+
+prikazi();
+</script>
+
+</body>
+</html>
